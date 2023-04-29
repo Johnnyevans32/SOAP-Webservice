@@ -30,8 +30,7 @@ export class SoapWebService
     };
   }
   async getCountries(): Promise<ICountry[]> {
-    try {
-      const xmlData = `<?xml version="1.0" encoding="utf-8"?>\n
+    const xmlData = `<?xml version="1.0" encoding="utf-8"?>\n
         <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">\n  
           <soap:Body>\n
             <ListOfCountryNamesByName xmlns="http://www.oorsprong.org/websamples.countryinfo">\n
@@ -39,45 +38,45 @@ export class SoapWebService
           </soap:Body>\n
         </soap:Envelope>`;
 
-      const xmlRes = await this.request({ data: xmlData });
+    const xmlRes = await this.request({ data: xmlData });
 
-      const {
-        Envelope: {
-          Body: {
-            ListOfCountryNamesByNameResponse: {
-              ListOfCountryNamesByNameResult: { tCountryCodeAndName },
-            },
+    const {
+      Envelope: {
+        Body: {
+          ListOfCountryNamesByNameResponse: {
+            ListOfCountryNamesByNameResult: { tCountryCodeAndName },
           },
         },
-      } = await parseStringPromise(xmlRes, this.xmlParseOptions);
-      const result = await Promise.all(
-        tCountryCodeAndName.map(
-          async (c: { sName: string; sISOCode: string }) => {
-            // this is sorta an expensive operation but due to the architecture of the service and requirements i have no choice
-            const capital = await this.getCountryCapital(c.sISOCode);
-            const currency = await this.getCountryCurrency(c.sISOCode);
-            const flag = await this.getCountryFlag(c.sISOCode);
-            const dialCode = await this.getCountryDialCode(c.sISOCode);
-            return {
-              name: c.sName,
-              isoCode: c.sISOCode,
-              capital,
-              currency,
-              flag,
-              dialCode,
-            };
-          }
-        )
-      );
-      return result;
-    } catch (error) {
-      console.log(error);
-    }
+      },
+    } = await parseStringPromise(xmlRes, this.xmlParseOptions);
+    const result = await Promise.all(
+      tCountryCodeAndName.map(
+        async (c: { sName: string; sISOCode: string }) => {
+          // this is sorta an expensive operation but due to the architecture of the service and requirements i have no choice
+          const [capital, currency, flag, dialCode] = await Promise.all([
+            this.getCountryCapital(c.sISOCode),
+            this.getCountryCurrency(c.sISOCode),
+            this.getCountryFlag(c.sISOCode),
+            this.getCountryDialCode(c.sISOCode),
+          ]);
+          console.log(capital, currency, flag, dialCode);
+
+          return {
+            name: c.sName,
+            isoCode: c.sISOCode,
+            capital,
+            currency,
+            flag,
+            dialCode,
+          };
+        }
+      )
+    );
+    return result;
   }
 
   async getCountryCapital(country: string): Promise<string> {
-    try {
-      const xmlData = `<?xml version="1.0" encoding="utf-8"?>\n
+    const xmlData = `<?xml version="1.0" encoding="utf-8"?>\n
         <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">\n  
           <soap:Body>\n
             <CapitalCity xmlns="http://www.oorsprong.org/websamples.countryinfo">\n
@@ -86,26 +85,22 @@ export class SoapWebService
           </soap:Body>\n
         </soap:Envelope>`;
 
-      const xmlRes = await this.request({ data: xmlData });
+    const xmlRes = await this.request({ data: xmlData });
 
-      const {
-        Envelope: {
-          Body: {
-            CapitalCityResponse: { CapitalCityResult },
-          },
+    const {
+      Envelope: {
+        Body: {
+          CapitalCityResponse: { CapitalCityResult },
         },
-      } = await parseStringPromise(xmlRes, this.xmlParseOptions);
-      return CapitalCityResult;
-    } catch (error) {
-      console.log(error);
-    }
+      },
+    } = await parseStringPromise(xmlRes, this.xmlParseOptions);
+    return CapitalCityResult;
   }
 
   async getCountryCurrency(
     country: string
   ): Promise<{ name: string; isoCode: string }> {
-    try {
-      const xmlData = `<?xml version="1.0" encoding="utf-8"?>\n
+    const xmlData = `<?xml version="1.0" encoding="utf-8"?>\n
         <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">\n  
           <soap:Body>\n
             <CountryCurrency xmlns="http://www.oorsprong.org/websamples.countryinfo">\n
@@ -114,29 +109,25 @@ export class SoapWebService
           </soap:Body>\n
         </soap:Envelope>`;
 
-      const xmlRes = await this.request({ data: xmlData });
+    const xmlRes = await this.request({ data: xmlData });
 
-      const {
-        Envelope: {
-          Body: {
-            CountryCurrencyResponse: {
-              CountryCurrencyResult: { sName: name, sISOCode: isoCode },
-            },
+    const {
+      Envelope: {
+        Body: {
+          CountryCurrencyResponse: {
+            CountryCurrencyResult: { sName: name, sISOCode: isoCode },
           },
         },
-      } = await parseStringPromise(xmlRes, this.xmlParseOptions);
-      return {
-        name,
-        isoCode,
-      };
-    } catch (error) {
-      console.log(error);
-    }
+      },
+    } = await parseStringPromise(xmlRes, this.xmlParseOptions);
+    return {
+      name,
+      isoCode,
+    };
   }
 
   async getCountryFlag(country: string): Promise<string> {
-    try {
-      const xmlData = `<?xml version="1.0" encoding="utf-8"?>\n
+    const xmlData = `<?xml version="1.0" encoding="utf-8"?>\n
         <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">\n  
           <soap:Body>\n
             <CountryFlag xmlns="http://www.oorsprong.org/websamples.countryinfo">\n
@@ -145,24 +136,20 @@ export class SoapWebService
           </soap:Body>\n
         </soap:Envelope>`;
 
-      const xmlRes = await this.request({ data: xmlData });
+    const xmlRes = await this.request({ data: xmlData });
 
-      const {
-        Envelope: {
-          Body: {
-            CountryFlagResponse: { CountryFlagResult },
-          },
+    const {
+      Envelope: {
+        Body: {
+          CountryFlagResponse: { CountryFlagResult },
         },
-      } = await parseStringPromise(xmlRes, this.xmlParseOptions);
-      return CountryFlagResult;
-    } catch (error) {
-      console.log(error);
-    }
+      },
+    } = await parseStringPromise(xmlRes, this.xmlParseOptions);
+    return CountryFlagResult;
   }
 
   async getCountryDialCode(country: string): Promise<string> {
-    try {
-      const xmlData = `<?xml version="1.0" encoding="utf-8"?>\n
+    const xmlData = `<?xml version="1.0" encoding="utf-8"?>\n
         <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">\n  
           <soap:Body>\n
             <CountryIntPhoneCode xmlns="http://www.oorsprong.org/websamples.countryinfo">\n
@@ -171,18 +158,15 @@ export class SoapWebService
           </soap:Body>\n
         </soap:Envelope>`;
 
-      const xmlRes = await this.request({ data: xmlData });
+    const xmlRes = await this.request({ data: xmlData });
 
-      const {
-        Envelope: {
-          Body: {
-            CountryIntPhoneCodeResponse: { CountryIntPhoneCodeResult },
-          },
+    const {
+      Envelope: {
+        Body: {
+          CountryIntPhoneCodeResponse: { CountryIntPhoneCodeResult },
         },
-      } = await parseStringPromise(xmlRes, this.xmlParseOptions);
-      return CountryIntPhoneCodeResult;
-    } catch (error) {
-      console.log(error);
-    }
+      },
+    } = await parseStringPromise(xmlRes, this.xmlParseOptions);
+    return CountryIntPhoneCodeResult;
   }
 }
